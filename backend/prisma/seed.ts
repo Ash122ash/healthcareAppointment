@@ -1,4 +1,4 @@
-import { PrismaClient, Role, AppointmentStatus } from '@prisma/client';
+import { PrismaClient, Role, AppointmentStatus, LLMStatus, UrgencyLevel } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -7,8 +7,8 @@ async function main() {
   console.log('Seeding database...');
 
   // Clear existing data in reverse order of dependencies
-  await prisma.slotHold.deleteMany();
   await prisma.medicationReminder.deleteMany();
+  await prisma.slotHold.deleteMany();
   await prisma.symptomForm.deleteMany();
   await prisma.preVisitSummary.deleteMany();
   await prisma.postVisitNote.deleteMany();
@@ -17,42 +17,45 @@ async function main() {
   await prisma.doctorLeave.deleteMany();
   await prisma.leaveConflictLog.deleteMany();
   await prisma.doctorProfile.deleteMany();
+  await prisma.emailLog.deleteMany();
   await prisma.user.deleteMany();
 
   const saltRounds = 10;
-  const adminPasswordHash = await bcrypt.hash('adminpassword', saltRounds);
-  const doctorPasswordHash = await bcrypt.hash('doctorpassword', saltRounds);
-  const patientPasswordHash = await bcrypt.hash('patientpassword', saltRounds);
+  const adminHash   = await bcrypt.hash('adminpassword', saltRounds);
+  const doctorHash  = await bcrypt.hash('Demo@1234', saltRounds);
+  const patientHash = await bcrypt.hash('Patient@1234', saltRounds);
 
-  // 1. Admin
-  const admin = await prisma.user.create({
+  // ──────────────────────────────────────
+  // 1. ADMIN
+  // ──────────────────────────────────────
+  await prisma.user.create({
     data: {
       email: 'admin@medisync.com',
-      passwordHash: adminPasswordHash,
+      passwordHash: adminHash,
       role: Role.ADMIN,
       name: 'System Admin',
-      phone: '1234567890',
+      phone: '9000000001',
     },
   });
-  console.log('Created Admin User:', admin.email);
+  console.log('✅ Admin created');
 
-  // 2. Doctors
-  // Dr. Sarah Jenkins (Cardiology)
-  const drJenkinsUser = await prisma.user.create({
+  // ──────────────────────────────────────
+  // 2. DOCTORS
+  // ──────────────────────────────────────
+  const drRajeshUser = await prisma.user.create({
     data: {
-      email: 'sarah.jenkins@medisync.com',
-      passwordHash: doctorPasswordHash,
+      email: 'dr.rajesh.kumar@medisync.com',
+      passwordHash: doctorHash,
       role: Role.DOCTOR,
-      name: 'Dr. Sarah Jenkins',
-      phone: '9876543210',
+      name: 'Dr. Rajesh Kumar',
+      phone: '9000000002',
     },
   });
-
-  const drJenkinsProfile = await prisma.doctorProfile.create({
+  const drRajeshProfile = await prisma.doctorProfile.create({
     data: {
-      userId: drJenkinsUser.id,
+      userId: drRajeshUser.id,
       specialization: 'Cardiology',
-      bio: 'Board-certified cardiologist with over 15 years of experience in cardiovascular health.',
+      bio: 'Senior cardiologist with 18 years of experience in interventional cardiology and heart failure management. MBBS, MD, DM – AIIMS Delhi.',
       workingHours: [
         { weekday: 1, start: '09:00', end: '17:00' },
         { weekday: 2, start: '09:00', end: '17:00' },
@@ -61,182 +64,308 @@ async function main() {
         { weekday: 5, start: '09:00', end: '17:00' },
       ],
       slotDurationMinutes: 30,
-      consultationFee: 150.00,
+      consultationFee: 800,
     },
   });
 
-  // Dr. Michael Chen (Pediatrics)
-  const drChenUser = await prisma.user.create({
+  const drPriyaUser = await prisma.user.create({
     data: {
-      email: 'michael.chen@medisync.com',
-      passwordHash: doctorPasswordHash,
+      email: 'dr.priya.sharma@medisync.com',
+      passwordHash: doctorHash,
       role: Role.DOCTOR,
-      name: 'Dr. Michael Chen',
-      phone: '9876543211',
+      name: 'Dr. Priya Sharma',
+      phone: '9000000003',
     },
   });
-
-  const drChenProfile = await prisma.doctorProfile.create({
+  const drPriyaProfile = await prisma.doctorProfile.create({
     data: {
-      userId: drChenUser.id,
+      userId: drPriyaUser.id,
       specialization: 'Pediatrics',
-      bio: 'Pediatrician dedicated to providing compassionate care for infants, children, and adolescents.',
+      bio: 'Child health specialist focused on growth, development, and preventive care. MBBS, MD Paediatrics – KEM Mumbai.',
       workingHours: [
         { weekday: 1, start: '10:00', end: '16:00' },
         { weekday: 2, start: '10:00', end: '16:00' },
-        { weekday: 3, start: '10:00', end: '16:00' },
         { weekday: 4, start: '10:00', end: '16:00' },
+        { weekday: 5, start: '10:00', end: '16:00' },
       ],
       slotDurationMinutes: 20,
-      consultationFee: 120.00,
+      consultationFee: 600,
     },
   });
 
-  // Dr. Emily Rodriguez (General Medicine)
-  const drRodriguezUser = await prisma.user.create({
+  const drArjunUser = await prisma.user.create({
     data: {
-      email: 'emily.rodriguez@medisync.com',
-      passwordHash: doctorPasswordHash,
+      email: 'dr.arjun.mehta@medisync.com',
+      passwordHash: doctorHash,
       role: Role.DOCTOR,
-      name: 'Dr. Emily Rodriguez',
-      phone: '9876543212',
+      name: 'Dr. Arjun Mehta',
+      phone: '9000000004',
     },
   });
-
-  const drRodriguezProfile = await prisma.doctorProfile.create({
+  const drArjunProfile = await prisma.doctorProfile.create({
     data: {
-      userId: drRodriguezUser.id,
-      specialization: 'General Medicine',
-      bio: 'Primary care physician focused on preventive medicine and family healthcare.',
+      userId: drArjunUser.id,
+      specialization: 'Orthopedics',
+      bio: 'Orthopedic surgeon specialising in joint replacement and sports injuries. MBBS, MS Ortho – PGIMER Chandigarh.',
       workingHours: [
-        { weekday: 2, start: '08:00', end: '16:00' },
-        { weekday: 3, start: '08:00', end: '16:00' },
-        { weekday: 4, start: '08:00', end: '16:00' },
-        { weekday: 5, start: '08:00', end: '16:00' },
-        { weekday: 6, start: '08:00', end: '16:00' },
+        { weekday: 2, start: '08:00', end: '14:00' },
+        { weekday: 3, start: '08:00', end: '14:00' },
+        { weekday: 5, start: '08:00', end: '14:00' },
+        { weekday: 6, start: '08:00', end: '12:00' },
       ],
       slotDurationMinutes: 30,
-      consultationFee: 100.00,
+      consultationFee: 700,
     },
   });
 
-  console.log('Created Doctor Profiles');
-
-  // 3. Patients
-  const patient1 = await prisma.user.create({
+  const drSunitaUser = await prisma.user.create({
     data: {
-      email: 'john.doe@gmail.com',
-      passwordHash: patientPasswordHash,
-      role: Role.PATIENT,
-      name: 'John Doe',
-      phone: '5551234567',
+      email: 'dr.sunita.rao@medisync.com',
+      passwordHash: doctorHash,
+      role: Role.DOCTOR,
+      name: 'Dr. Sunita Rao',
+      phone: '9000000005',
+    },
+  });
+  const drSunitaProfile = await prisma.doctorProfile.create({
+    data: {
+      userId: drSunitaUser.id,
+      specialization: 'Dermatology',
+      bio: 'Expert dermatologist in medical and cosmetic skin care, acne, eczema, and hair disorders. MBBS, MD Dermatology – Manipal.',
+      workingHours: [
+        { weekday: 1, start: '11:00', end: '18:00' },
+        { weekday: 3, start: '11:00', end: '18:00' },
+        { weekday: 4, start: '11:00', end: '18:00' },
+        { weekday: 6, start: '10:00', end: '14:00' },
+      ],
+      slotDurationMinutes: 20,
+      consultationFee: 500,
     },
   });
 
-  const patient2 = await prisma.user.create({
-    data: {
-      email: 'alice.smith@gmail.com',
-      passwordHash: patientPasswordHash,
-      role: Role.PATIENT,
-      name: 'Alice Smith',
-      phone: '5557654321',
-    },
+  console.log('✅ 4 Doctor profiles created');
+
+  // ──────────────────────────────────────
+  // 3. PATIENTS
+  // ──────────────────────────────────────
+  const amit = await prisma.user.create({
+    data: { email: 'amit.verma@gmail.com', passwordHash: patientHash, role: Role.PATIENT, name: 'Amit Verma', phone: '9111000001' },
   });
-
-  const patient3 = await prisma.user.create({
-    data: {
-      email: 'bob.johnson@gmail.com',
-      passwordHash: patientPasswordHash,
-      role: Role.PATIENT,
-      name: 'Bob Johnson',
-      phone: '5559998888',
-    },
+  const sneha = await prisma.user.create({
+    data: { email: 'sneha.patel@gmail.com', passwordHash: patientHash, role: Role.PATIENT, name: 'Sneha Patel', phone: '9111000002' },
   });
-
-  console.log('Created Patient Users');
-
-  // 4. Mock Appointments
-  const today = new Date();
-  const nextTuesday = new Date(today);
-  nextTuesday.setDate(today.getDate() + ((2 + 7 - today.getDay()) % 7 || 7));
-  nextTuesday.setHours(10, 0, 0, 0);
-
-  const slot1Start = new Date(nextTuesday);
-  const slot1EndJenkins = new Date(slot1Start);
-  slot1EndJenkins.setMinutes(slot1Start.getMinutes() + 30);
-
-  const slot1EndChen = new Date(slot1Start);
-  slot1EndChen.setMinutes(slot1Start.getMinutes() + 20);
-
-  const slot2Start = new Date(nextTuesday);
-  slot2Start.setHours(11, 0);
-  const slot2End = new Date(slot2Start);
-  slot2End.setMinutes(slot2Start.getMinutes() + 30);
-
-  const slot3Start = new Date(nextTuesday);
-  slot3Start.setHours(14, 0);
-  const slot3End = new Date(slot3Start);
-  slot3End.setMinutes(slot3Start.getMinutes() + 30);
-
-  // Past completed appointment (yesterday)
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  yesterday.setHours(10, 0, 0, 0);
-  const slotPastStart = new Date(yesterday);
-  const slotPastEnd = new Date(slotPastStart);
-  slotPastEnd.setMinutes(slotPastStart.getMinutes() + 30);
-
-  // Appt 1: Confirmed with Dr. Sarah Jenkins (Next Tuesday 10 AM)
-  await prisma.appointment.create({
-    data: {
-      patientId: patient1.id,
-      doctorId: drJenkinsProfile.userId,
-      slotStart: slot1Start,
-      slotEnd: slot1EndJenkins,
-      status: AppointmentStatus.CONFIRMED,
-    },
+  const rohit = await prisma.user.create({
+    data: { email: 'rohit.singh@gmail.com', passwordHash: patientHash, role: Role.PATIENT, name: 'Rohit Singh', phone: '9111000003' },
   });
+  const meera = await prisma.user.create({
+    data: { email: 'meera.nair@gmail.com', passwordHash: patientHash, role: Role.PATIENT, name: 'Meera Nair', phone: '9111000004' },
+  });
+  const vikram = await prisma.user.create({
+    data: { email: 'vikram.joshi@gmail.com', passwordHash: patientHash, role: Role.PATIENT, name: 'Vikram Joshi', phone: '9111000005' },
+  });
+  console.log('✅ 5 Patient users created');
 
-  // Appt 2: Completed with Dr. Sarah Jenkins (Yesterday)
-  await prisma.appointment.create({
+  // ──────────────────────────────────────
+  // 4. APPOINTMENTS WITH FULL FEATURE DATA
+  // ──────────────────────────────────────
+  const now = new Date();
+
+  const daysFromNow = (d: number, h: number, m = 0) => {
+    const dt = new Date(now);
+    dt.setDate(dt.getDate() + d);
+    dt.setHours(h, m, 0, 0);
+    return dt;
+  };
+
+  // --- COMPLETED APPOINTMENT (3 days ago) with Post-Visit Summary + Medication Reminders ---
+  const pastStart = daysFromNow(-3, 10);
+  const pastEnd   = daysFromNow(-3, 10, 30);
+  const completedAppt = await prisma.appointment.create({
     data: {
-      patientId: patient2.id,
-      doctorId: drJenkinsProfile.userId,
-      slotStart: slotPastStart,
-      slotEnd: slotPastEnd,
+      patientId: amit.id,
+      doctorId: drRajeshProfile.userId,
+      slotStart: pastStart,
+      slotEnd: pastEnd,
       status: AppointmentStatus.COMPLETED,
     },
   });
 
-  // Appt 3: Held slot with Dr. Michael Chen (Next Tuesday 10 AM)
-  await prisma.appointment.create({
+  await prisma.symptomForm.create({
     data: {
-      patientId: patient3.id,
-      doctorId: drChenProfile.userId,
-      slotStart: slot1Start,
-      slotEnd: slot1EndChen,
-      status: AppointmentStatus.HELD,
+      appointmentId: completedAppt.id,
+      symptomsText: 'Chest tightness and mild shortness of breath for the past week, especially during morning walks.',
     },
   });
 
-  // Appt 4: Cancelled with Dr. Emily Rodriguez (Next Tuesday 2 PM)
+  await prisma.preVisitSummary.create({
+    data: {
+      appointmentId: completedAppt.id,
+      urgencyLevel: UrgencyLevel.HIGH,
+      chiefComplaint: 'Chest tightness and exertional dyspnea',
+      suggestedQuestions: [
+        'Do you have a history of hypertension or high cholesterol?',
+        'Does the pain radiate to your left arm or jaw?',
+        'Have you experienced these symptoms before?',
+      ],
+      rawLLMResponse: '{"urgencyLevel":"HIGH","chiefComplaint":"Chest tightness and exertional dyspnea"}',
+      status: LLMStatus.SUCCESS,
+    },
+  });
+
+  await prisma.postVisitNote.create({
+    data: {
+      appointmentId: completedAppt.id,
+      clinicalNotes: 'Patient presents with stable angina. ECG shows mild ST changes. BP 148/92 mmHg. Started on Amlodipine 5mg and Aspirin 75mg. Lifestyle modification advised. Follow-up in 2 weeks.',
+      prescriptionJSON: JSON.stringify([
+        { medicine: 'Amlodipine', dosage: '5mg', frequency: 'Once daily', durationDays: 30 },
+        { medicine: 'Aspirin', dosage: '75mg', frequency: 'Once daily after food', durationDays: 30 },
+        { medicine: 'Atorvastatin', dosage: '10mg', frequency: 'Once at night', durationDays: 30 },
+      ]),
+    },
+  });
+
+  await prisma.postVisitSummary.create({
+    data: {
+      appointmentId: completedAppt.id,
+      patientFriendlyText: 'Dr. Rajesh Kumar found that you have mild stable angina — a condition where your heart temporarily doesn\'t get enough blood, causing chest tightness. Your blood pressure was a little high. He has prescribed three medicines to improve blood flow, thin the blood slightly, and lower cholesterol. Please avoid strenuous activity, reduce salt intake, and do gentle walks. Come back in 2 weeks.',
+      medicationSchedule: [
+        { medicine: 'Amlodipine', dosage: '5mg', frequency: 'Once daily in the morning', durationDays: 30, instructions: 'Take at the same time every day. Do not miss a dose.' },
+        { medicine: 'Aspirin', dosage: '75mg', frequency: 'Once daily after food', durationDays: 30, instructions: 'Always take after a meal to protect your stomach.' },
+        { medicine: 'Atorvastatin', dosage: '10mg', frequency: 'Once at bedtime', durationDays: 30, instructions: 'Take at night for best effect.' },
+      ],
+      followUpSteps: [
+        'Schedule a follow-up appointment in 2 weeks.',
+        'Monitor blood pressure twice daily and note readings.',
+        'Avoid heavy lifting and intense exercise for now.',
+        'Reduce salt and fried food in your diet.',
+        'Visit emergency immediately if chest pain worsens or spreads to the arm or jaw.',
+      ],
+      status: LLMStatus.SUCCESS,
+    },
+  });
+
+  // Medication reminders for Amit
+  const reminderBase = new Date(now);
+  reminderBase.setHours(8, 0, 0, 0);
+  for (let i = 0; i < 7; i++) {
+    const t = new Date(reminderBase);
+    t.setDate(t.getDate() + i);
+    await prisma.medicationReminder.create({
+      data: { appointmentId: completedAppt.id, patientId: amit.id, medicine: 'Amlodipine 5mg', scheduledTime: t },
+    });
+  }
+  console.log('✅ Completed appointment with AI summary + medication reminders created for Amit Verma');
+
+  // --- CONFIRMED FUTURE APPOINTMENTS ---
+  const future1Start = daysFromNow(2, 11);
+  const future1End   = daysFromNow(2, 11, 30);
   await prisma.appointment.create({
     data: {
-      patientId: patient1.id,
-      doctorId: drRodriguezProfile.userId,
-      slotStart: slot3Start,
-      slotEnd: slot3End,
+      patientId: sneha.id,
+      doctorId: drPriyaProfile.userId,
+      slotStart: future1Start,
+      slotEnd: future1End,
+      status: AppointmentStatus.CONFIRMED,
+    },
+  });
+
+  const future2Start = daysFromNow(3, 9);
+  const future2End   = daysFromNow(3, 9, 30);
+  await prisma.appointment.create({
+    data: {
+      patientId: rohit.id,
+      doctorId: drArjunProfile.userId,
+      slotStart: future2Start,
+      slotEnd: future2End,
+      status: AppointmentStatus.CONFIRMED,
+    },
+  });
+
+  const future3Start = daysFromNow(4, 14);
+  const future3End   = daysFromNow(4, 14, 20);
+  await prisma.appointment.create({
+    data: {
+      patientId: meera.id,
+      doctorId: drSunitaProfile.userId,
+      slotStart: future3Start,
+      slotEnd: future3End,
+      status: AppointmentStatus.CONFIRMED,
+    },
+  });
+
+  const future4Start = daysFromNow(5, 9, 30);
+  const future4End   = daysFromNow(5, 10);
+  await prisma.appointment.create({
+    data: {
+      patientId: vikram.id,
+      doctorId: drRajeshProfile.userId,
+      slotStart: future4Start,
+      slotEnd: future4End,
+      status: AppointmentStatus.CONFIRMED,
+    },
+  });
+
+  console.log('✅ Future confirmed appointments created');
+
+  // --- DOCTOR ON LEAVE + CANCELLED CONFLICTING APPOINTMENT ---
+  // Dr. Priya goes on leave in 2 days — but Rohit had a future appointment that day → auto cancelled
+  const leaveDate = daysFromNow(2, 0);
+  leaveDate.setHours(0, 0, 0, 0);
+
+  // Appointment that conflicts with leave (already confirmed above for Sneha → we'll cancel it)
+  await prisma.doctorLeave.create({
+    data: {
+      doctorId: drPriyaProfile.userId,
+      date: leaveDate,
+      reason: 'Medical conference – National Pediatrics Summit 2026',
+    },
+  });
+
+  // Mark Sneha's appointment as cancelled (conflicts with leave)
+  await prisma.appointment.updateMany({
+    where: { patientId: sneha.id, doctorId: drPriyaProfile.userId },
+    data: { status: AppointmentStatus.CANCELLED },
+  });
+
+  // Log the conflict
+  await prisma.leaveConflictLog.create({
+    data: {
+      doctorId: drPriyaProfile.userId,
+      leaveDate: leaveDate,
+      cancelledAppointments: [
+        { patientName: sneha.name, patientEmail: sneha.email, slotStart: future1Start },
+      ],
+    },
+  });
+
+  console.log('✅ Doctor leave created for Dr. Priya Sharma with cancelled conflict appointment');
+
+  // --- CANCELLED APPOINTMENT ---
+  const cancelledStart = daysFromNow(-1, 15);
+  const cancelledEnd   = daysFromNow(-1, 15, 30);
+  await prisma.appointment.create({
+    data: {
+      patientId: vikram.id,
+      doctorId: drSunitaProfile.userId,
+      slotStart: cancelledStart,
+      slotEnd: cancelledEnd,
       status: AppointmentStatus.CANCELLED,
     },
   });
 
-  console.log('Created Mock Appointments');
-  console.log('Database Seeding Successful!');
+  console.log('✅ Cancelled appointment created for Vikram Joshi');
+
+  console.log('\n🎉 Database seeding complete!');
+  console.log('────────────────────────────────────────');
+  console.log('Admin       → admin@medisync.com        / adminpassword');
+  console.log('Doctors     → dr.rajesh.kumar@medisync.com etc. / Demo@1234');
+  console.log('Patients    → amit.verma@gmail.com etc. / Patient@1234');
+  console.log('────────────────────────────────────────');
 }
 
 main()
   .catch((e) => {
-    console.error('Error during seeding:', e);
+    console.error('Seeding failed:', e);
     process.exit(1);
   })
   .finally(async () => {
