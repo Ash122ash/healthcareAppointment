@@ -4,6 +4,9 @@ set -e
 echo "==> Installing all dependencies (including dev)..."
 npm install --include=dev
 
+echo "==> Rebuilding native modules for Linux..."
+npm rebuild bcrypt
+
 echo "==> Setting execute permissions on binaries..."
 chmod -R +x node_modules/.bin
 
