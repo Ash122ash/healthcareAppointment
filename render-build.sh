@@ -13,13 +13,13 @@ chmod -R +x node_modules/.bin
 echo "==> Building shared library..."
 npm run build:shared
 
-echo "==> Building backend..."
+echo "==> Generating Prisma client (must run BEFORE tsc)..."
 cd backend
-npx tsc
-
-echo "==> Generating Prisma client..."
 chmod +x ../node_modules/.bin/prisma 2>/dev/null || true
 ../node_modules/.bin/prisma generate --schema=prisma/schema.prisma
+
+echo "==> Compiling backend TypeScript..."
+npx tsc
 cd ..
 
 echo "==> Build complete!"
