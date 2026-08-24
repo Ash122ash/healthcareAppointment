@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: medisync-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ash123
+      POSTGRES_DB: medisync
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - medisync-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: medisync-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - medisync-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  medisync-network:
+    driver: bridge
