@@ -4,7 +4,7 @@
   "private": true,
   "main": "dist/server.js",
   "scripts": {
-    "build": "npx tsc && node node_modules/prisma/build/index.js generate",
+    "build": "npx tsc && npx prisma generate",
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "db:generate": "prisma generate",
@@ -18,6 +18,7 @@
     "@anthropic-ai/sdk": "^0.120.0",
     "@medisync/shared": "*",
     "@prisma/client": "^5.14.0",
+    "prisma": "^5.14.0",
     "bcrypt": "^5.1.1",
     "bullmq": "^5.8.3",
     "cookie-parser": "^1.4.7",
@@ -38,7 +39,6 @@
     "@types/node": "^20.12.12",
     "@types/nodemailer": "^6.4.15",
     "nodemon": "^3.1.0",
-    "prisma": "^5.14.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   }
