@@ -4,7 +4,7 @@
   "private": true,
   "main": "dist/server.js",
   "scripts": {
-    "build": "npx tsc && npx prisma generate",
+    "build": "npx tsc && node node_modules/prisma/build/index.js generate",
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "db:generate": "prisma generate",
