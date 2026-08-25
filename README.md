@@ -34,9 +34,9 @@ MediSync is a robust, full-stack monorepo healthcare appointment management syst
 
 - **Frontend:** React 18, Vite, TypeScript, Tailwind CSS, Lucide Icons, Framer Motion
 - **Backend:** Node.js, Express, TypeScript, Prisma ORM, bcrypt, jsonwebtoken
-- **Database:** PostgreSQL (hosted on Render)
+- **Database:** PostgreSQL (hosted on Neon Serverless)
 - **Tooling:** npm workspaces (Monorepo), Zod (Validation), Anthropic API (AI)
-- **Deployment:** Vercel (Frontend), Render (Backend & DB)
+- **Deployment:** Vercel (Frontend), Render (Backend), Neon (DB)
 
 ---
 

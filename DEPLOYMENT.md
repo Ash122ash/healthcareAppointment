@@ -21,8 +21,8 @@ Create a `.env` configuration file in the `backend/` directory based on the foll
 PORT=5000
 
 # Database URLs (Postgres)
-# Replace ash123 with your actual password. If using Docker, default matches below.
-DATABASE_URL="postgresql://postgres:ash123@localhost:5432/medisync?schema=public"
+# Replace with your actual database URL (e.g., from Neon, Supabase, or local Postgres).
+DATABASE_URL="postgresql://user:password@host.region.aws.neon.tech/dbname?sslmode=require"
 
 # Redis Server Connection URL (Used by BullMQ)
 REDIS_URL="redis://127.0.0.1:6379"
